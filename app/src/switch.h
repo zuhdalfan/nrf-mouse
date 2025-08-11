@@ -2,12 +2,15 @@
 #define SWITCH_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void switch_init();
-bool switch_get_state_left(void);
-bool switch_get_state_right(void);
+    void switch_init();
+    bool switch_get_state_left(void);
+    bool switch_get_state_right(void);
+    bool switch_get_state_forward(void);
+    bool switch_get_state_backward(void);
 
 #ifdef __cplusplus
 }

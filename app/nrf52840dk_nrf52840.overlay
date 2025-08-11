@@ -6,6 +6,8 @@
         ledstrip = &led_strip;
         sw0 = &left_button;
         sw1 = &right_button;
+        sw2 = &forward_button;
+        sw3 = &backward_button;
         fuel-gauge0 = &max17048;
     };
 
@@ -31,6 +33,16 @@
             gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
             label = "Left Click";
         };
+        forward_button: forward_button {
+            gpios = <&gpio0 28 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            label = "Forward Button";
+        };
+
+        backward_button: backward_button {
+            gpios = <&gpio0 29 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            label = "Backward Button";
+        };
+
     };    
 
     id_dev_0: hid_dev_0 {
@@ -46,21 +58,29 @@
 	};
 };
 
-i2s_led: &i2s0 {
-	status = "okay";
-	pinctrl-0 = <&i2s0_default_alt>;
-	pinctrl-names = "default";
-
-	led_strip: ws2812@0 {
-		compatible = "worldsemi,ws2812-i2s";
-
-		reg = <0>;
-		chain-length = <0>; /* arbitrary; change at will */
-		color-mapping = <1 0 2>;
-		out-active-low;
-		reset-delay = <120>;
-	};
+&i2s0 {
+    status = "okay";
+    pinctrl-0 = <&i2s0_default_alt>;
+    pinctrl-names = "default";
+    // Additional I2S configuration as needed
+    led_strip: ws2812@0 {
+        compatible = "worldsemi,ws2812-i2s";
+        reg = <0>;
+        chain-length = <8>;         /* Set to your actual LED count */
+        color-mapping = <1 0 2>;    /* Example: GRB ordering */
+        reset-delay = <120>;        /* 120 µs reset delay */
+        out-active-low;             /* If LED requires active-low */
+        /* Optional tuning properties if needed:
+           nibble-one = <14>;
+           nibble-zero = <8>;
+           lrck-period = <10>;
+           extra-wait-time = <300>;
+        */
+        i2s-dev = <&i2s0>;               /* I2S controller reference (mandatory) */
+    };
 };
+
+
 
 &spi1 {
     compatible = "nordic,nrf-spim";
