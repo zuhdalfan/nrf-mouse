@@ -18,8 +18,7 @@ extern "C"
     bool ble_hids_is_mouse_report_writable(void);
     void ble_hids_mouse_notify_input(const void *data, uint8_t dataLen);
     void ble_hids_mouse_notify_boot(const void *data, uint8_t dataLen);
-
-    void ble_hids_send_mouse_notification(bool left, bool right, int16_t move_x, int16_t move_y, int8_t scroll_v);
+    void ble_hids_send_mouse_notification(bool left, bool right, bool mid, bool forward, bool backward, int16_t move_x, int16_t move_y, int8_t scroll_v);
 
     void ble_hids_test_mouse_square(void);
 

@@ -100,42 +100,50 @@ static uint8_t mse_input_report[REPORT_MOUSE_SIZE];
 static uint8_t mse_boot_input_report[BOOT_REPORT_MOUSE_SIZE];
 
 /* Report map */
-static const uint8_t report_map[] =
-    {
-        /* MOUSE INPUT REPORT MAP */
-        0x05, 0x01,                 // Usage Page (Generic Desktop Ctrls)
-        0x09, 0x02,                 // Usage (Mouse)
-        0xA1, 0x01,                 // Collection (Application)
-        0x85, HIDS_REPORT_ID_MOUSE, //   Report ID (1)
-        0x09, 0x01,                 //   Usage (Pointer)
-        0xA1, 0x00,                 //   Collection (Physical)
-        0x95, 0x02,                 //     Report Count (2)
-        0x75, 0x01,                 //     Report Size (1)
-        0x15, 0x00,                 //     Logical Minimum (0)
-        0x25, 0x01,                 //     Logical Maximum (1)
-        0x05, 0x09,                 //     Usage Page (Button)
-        0x19, 0x01,                 //     Usage Minimum (0x01)
-        0x29, 0x02,                 //     Usage Maximum (0x02)
-        0x81, 0x02,                 //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-        0x95, 0x01,                 //     Report Count (1)
-        0x75, 0x06,                 //     Report Size (6)
-        0x81, 0x03,                 //     Input (Cnst, Var, Abs)
-        0x05, 0x01,                 //     Usage Page (Generic Desktop Ctrls)
-        0x16, 0x00, 0x80,           //     Logical Minimum (-32768)
-        0x26, 0xFF, 0x7F,           //     Logical Maximum (32767)
-        0x75, 0x10,                 //     Report Size (16)
-        0x95, 0x02,                 //     Report Count (2)
-        0x09, 0x30,                 //     Usage (X)
-        0x09, 0x31,                 //     Usage (Y)
-        0x81, 0x06,                 //     Input (Data,Var,Rel,No Wrap,Linear,Preferred State,No Null Position)
-        0x15, 0x81,                 //     Logical Minimum (-127)
-        0x25, 0x7F,                 //     Logical Maximum (127)
-        0x75, 0x08,                 //     Report Size (8)
-        0x95, 0x01,                 //     Report Count (1)
-        0x09, 0x38,                 //     Usage (Wheel)
-        0x81, 0x06,                 //     Input (Data,Var,Rel,No Wrap,Linear,Preferred State,No Null Position)
-        0xC0,                       //   End Collection
-        0xC0,                       // End Collection
+static const uint8_t report_map[] = {
+    /* MOUSE INPUT REPORT MAP */
+    0x05, 0x01,                 // Usage Page (Generic Desktop Ctrls)
+    0x09, 0x02,                 // Usage (Mouse)
+    0xA1, 0x01,                 // Collection (Application)
+    0x85, HIDS_REPORT_ID_MOUSE, //   Report ID (1)
+    0x09, 0x01,                 //   Usage (Pointer)
+    0xA1, 0x00,                 //   Collection (Physical)
+
+    // Buttons
+    0x95, 0x05, //     Report Count (5 buttons)
+    0x75, 0x01, //     Report Size (1)
+    0x15, 0x00, //     Logical Minimum (0)
+    0x25, 0x01, //     Logical Maximum (1)
+    0x05, 0x09, //     Usage Page (Button)
+    0x19, 0x01, //     Usage Minimum (Button 1)
+    0x29, 0x05, //     Usage Maximum (Button 5)
+    0x81, 0x02, //     Input (Data,Var,Abs)
+
+    // Padding
+    0x95, 0x01, //     Report Count (1)
+    0x75, 0x03, //     Report Size (3 bits padding)
+    0x81, 0x03, //     Input (Cnst,Var,Abs)
+
+    // X, Y
+    0x05, 0x01,       //     Usage Page (Generic Desktop Ctrls)
+    0x16, 0x00, 0x80, //     Logical Minimum (-32768)
+    0x26, 0xFF, 0x7F, //     Logical Maximum (32767)
+    0x75, 0x10,       //     Report Size (16)
+    0x95, 0x02,       //     Report Count (2)
+    0x09, 0x30,       //     Usage (X)
+    0x09, 0x31,       //     Usage (Y)
+    0x81, 0x06,       //     Input (Data,Var,Rel)
+
+    // Wheel
+    0x15, 0x81, //     Logical Minimum (-127)
+    0x25, 0x7F, //     Logical Maximum (127)
+    0x75, 0x08, //     Report Size (8)
+    0x95, 0x01, //     Report Count (1)
+    0x09, 0x38, //     Usage (Wheel)
+    0x81, 0x06, //     Input (Data,Var,Rel)
+
+    0xC0, //   End Collection
+    0xC0, // End Collection
 };
 
 static const hids_report_info_t mse_input_rep_info =
@@ -406,28 +414,40 @@ void ble_hids_mouse_notify_boot(const void *data, uint8_t dataLen)
     err = bt_gatt_notify_cb(active_conn, &params);
 }
 
-static inline uint8_t mouse_buttons_mask(bool left, bool right)
+static inline uint8_t mouse_buttons_mask(bool left, bool right, bool middle, bool back, bool forward)
 {
     uint8_t mask = 0;
 
     if (left)
     {
-        mask |= 1 << 0; // Button 1 (bit 0)
-    }
+        mask |= 1 << 0;
+    } // Button 1
     if (right)
     {
-        mask |= 1 << 1; // Button 2 (bit 1)
-    }
+        mask |= 1 << 1;
+    } // Button 2
+    if (middle)
+    {
+        mask |= 1 << 2;
+    } // Button 3
+    if (back)
+    {
+        mask |= 1 << 3;
+    } // Button 4
+    if (forward)
+    {
+        mask |= 1 << 4;
+    } // Button 5
 
     return mask;
 }
 
-void ble_hids_send_mouse_notification(bool left, bool right, int16_t move_x, int16_t move_y, int8_t scroll_v)
+void ble_hids_send_mouse_notification(bool left, bool right, bool mid, bool forward, bool backward, int16_t move_x, int16_t move_y, int8_t scroll_v)
 {
     ble_hids_prot_mode_t currProtMode = ble_hids_get_prot_mode();
     printk("currProtMode = %d\n", currProtMode);
 
-    uint8_t buttons_bitmask = mouse_buttons_mask(left, right);
+    uint8_t buttons_bitmask = mouse_buttons_mask(left, right, mid, backward, forward);
 
     if (ble_hids_is_mouse_report_writable())
     {
@@ -473,28 +493,28 @@ void ble_hids_test_mouse_square(void)
     /* Move right */
     for (i = 0; i < STEP_COUNT; i++)
     {
-        ble_hids_send_mouse_notification(0, 0, STEP_SIZE, 0, 0);
+        ble_hids_send_mouse_notification(0, 0, 0, 0, 0, STEP_SIZE, 0, 0);
         k_msleep(DELAY_MS);
     }
 
     /* Move down */
     for (i = 0; i < STEP_COUNT; i++)
     {
-        ble_hids_send_mouse_notification(0, 0, 0, STEP_SIZE, 0);
+        ble_hids_send_mouse_notification(0, 0, 0, 0, 0, 0, STEP_SIZE, 0);
         k_msleep(DELAY_MS);
     }
 
     /* Move left */
     for (i = 0; i < STEP_COUNT; i++)
     {
-        ble_hids_send_mouse_notification(0, 0, -STEP_SIZE, 0, 0);
+        ble_hids_send_mouse_notification(0, 0, 0, 0, 0, -STEP_SIZE, 0, 0);
         k_msleep(DELAY_MS);
     }
 
     /* Move up */
     for (i = 0; i < STEP_COUNT; i++)
     {
-        ble_hids_send_mouse_notification(0, 0, 0, -STEP_SIZE, 0);
+        ble_hids_send_mouse_notification(0, 0, 0, 0, 0, 0, -STEP_SIZE, 0);
         k_msleep(DELAY_MS);
     }
 }

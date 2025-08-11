@@ -125,17 +125,27 @@ static bool get_switch_state_left()
     return switch_get_state_left();
 }
 
+static bool get_switch_state_forward()
+{
+    return switch_get_state_forward();
+}
+
+static bool get_switch_state_backward()
+{
+    return switch_get_state_backward();
+}
+
 static void send_output_to_host(
     int cursor_x, int cursor_y,
     int encoder_increment, bool encoder_button_state,
-    bool switch_right_state, bool switch_left_state)
+    bool switch_right_state, bool switch_left_state, bool switch_forward_state, bool switch_backward_state)
 {
     connection_type_enum_t connection_type = get_connection_type();
     switch (connection_type)
     {
     case CONN_USB:
         // Send over USB
-        usb_hid_mouse_update(switch_right_state, switch_left_state, encoder_button_state, false, false, cursor_x, cursor_y, encoder_increment);
+        usb_hid_mouse_update(switch_right_state, switch_left_state, encoder_button_state, switch_forward_state, switch_backward_state, cursor_x, cursor_y, encoder_increment);
         // usb_hid_mouse_test();
         break;
     case CONN_ESB:
@@ -143,7 +153,7 @@ static void send_output_to_host(
         break;
     case CONN_BLE:
         // Send over BLE
-        ble_hids_send_mouse_notification(switch_left_state, switch_right_state, cursor_x, cursor_y, encoder_increment);
+        ble_hids_send_mouse_notification(switch_right_state, switch_left_state, encoder_button_state, switch_forward_state, switch_backward_state, cursor_x, cursor_y, encoder_increment);
         // ble_hids_test_mouse_square();
         break;
     default:
@@ -211,6 +221,8 @@ void polling_run(void)
     // GET MAIN SWITCH STATE
     bool switch_right_state = get_switch_state_right();
     bool switch_left_state = get_switch_state_left();
+    bool switch_forward_state = get_switch_state_forward();
+    bool switch_backward_state = get_switch_state_backward();
 
     send_output_to_host(
         cursor_position_x,
@@ -218,7 +230,9 @@ void polling_run(void)
         encoder_increment,
         encoder_button_state,
         switch_right_state,
-        switch_left_state);
+        switch_left_state,
+        switch_forward_state,
+        switch_backward_state);
 
     // GET BATTERY PERCENTAGE
     int battery_percent = 0;
