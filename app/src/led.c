@@ -4,27 +4,56 @@
 #include <zephyr/drivers/led_strip.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/gpio.h>
 
 LOG_MODULE_REGISTER(led, LOG_LEVEL_DBG);
 
 #define STRIP_NODE DT_ALIAS(ledstrip)
+#define GLOW_EN_NODE DT_ALIAS(glow_en)
 
 static const struct device *strip = DEVICE_DT_GET(STRIP_NODE);
-static struct led_rgb pixel[1];
+static struct led_rgb pixel[5];
+
+static const struct gpio_dt_spec glow_en_dev = GPIO_DT_SPEC_GET_OR(GLOW_EN_NODE, gpios, {0});
+
+static void glow_enable(void)
+{
+    gpio_pin_set_dt(&glow_en_dev, 1);
+}
+
+static void glow_en_init(void)
+{
+    if (!device_is_ready(&glow_en_dev))
+    {
+        LOG_ERR("Glow enable GPIO device not ready");
+        return;
+    }
+    int ret = gpio_pin_configure_dt(&glow_en_dev, GPIO_OUTPUT_ACTIVE);
+    if (ret != 0)
+    {
+        LOG_ERR("Failed to configure glow enable pin: %d", ret);
+        return;
+    }
+    glow_enable();
+    LOG_INF("Glow enable initialized");
+}
 
 static const led_rgb_t led_colors[LED_COLOR_COUNT] = {
-    [LED_COLOR_OFF]   = { .r = 0,   .g = 0,   .b = 0   },
-    [LED_COLOR_RED]   = { .r = 255, .g = 0,   .b = 0   },
-    [LED_COLOR_GREEN] = { .r = 0,   .g = 255, .b = 0   },
-    [LED_COLOR_YELLOW]= { .r = 255, .g = 255, .b = 0   },
-    [LED_COLOR_ORANGE]= { .r = 255, .g = 165, .b = 0   },
-    [LED_COLOR_BLUE]  = { .r = 0,   .g = 0,   .b = 255 },
-    [LED_COLOR_CYAN]  = { .r = 0,   .g = 255, .b = 255 },
-    [LED_COLOR_PURPLE]= { .r = 128, .g = 0,   .b = 128 }
-};
+    [LED_COLOR_OFF] = {.r = 0, .g = 0, .b = 0},
+    [LED_COLOR_RED] = {.r = 255, .g = 0, .b = 0},
+    [LED_COLOR_GREEN] = {.r = 0, .g = 255, .b = 0},
+    [LED_COLOR_YELLOW] = {.r = 255, .g = 255, .b = 0},
+    [LED_COLOR_ORANGE] = {.r = 255, .g = 165, .b = 0},
+    [LED_COLOR_BLUE] = {.r = 0, .g = 0, .b = 255},
+    [LED_COLOR_CYAN] = {.r = 0, .g = 255, .b = 255},
+    [LED_COLOR_PURPLE] = {.r = 128, .g = 0, .b = 128}};
 
-void led_init(void) {
-    if (!device_is_ready(strip)) {
+void led_init(void)
+{
+    glow_en_init();
+
+    if (!device_is_ready(strip))
+    {
         LOG_ERR("LED strip device not ready");
         return;
     }
@@ -32,19 +61,23 @@ void led_init(void) {
     led_set_color(LED_COLOR_OFF);
 }
 
-void led_set_rgb(uint8_t r, uint8_t g, uint8_t b) {
+void led_set_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
     pixel[0].r = r;
     pixel[0].g = g;
     pixel[0].b = b;
 
     int ret = led_strip_update_rgb(strip, pixel, ARRAY_SIZE(pixel));
-    if (ret) {
+    if (ret)
+    {
         LOG_ERR("Failed to update LED strip: %d", ret);
     }
 }
 
-void led_set_color(led_color_t color) {
-    if (color >= LED_COLOR_COUNT) {
+void led_set_color(led_color_t color)
+{
+    if (color >= LED_COLOR_COUNT)
+    {
         LOG_WRN("Invalid LED color: %d", color);
         color = LED_COLOR_OFF;
     }
