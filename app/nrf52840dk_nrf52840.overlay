@@ -6,9 +6,11 @@
         ledstrip = &led_strip;
         sw0 = &left_button;
         sw1 = &right_button;
-        sw2 = &forward_button;
-        sw3 = &backward_button;
+        sw2 = &forward_button; // not connected on the PCB
+        sw3 = &backward_button; // not connected on the PCB
+        dpi-btn = &dpi_button;
         fuel-gauge0 = &max17048;
+        glow-en = &glow_en;
     };
 
     
@@ -17,33 +19,46 @@
         status = "okay";
         
         scroll_a: scroll_a {
-            gpios = <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+            gpios = <&gpio1 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
         };
         scroll_b: scroll_b {
-            gpios = <&gpio0 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+            gpios = <&gpio1 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
         };
         scroll_btn: scroll_btn {
-            gpios = <&gpio0 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            gpios = <&gpio1 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
         };
         right_button: right_button {
-            gpios = <&gpio0 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            gpios = <&gpio1 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
             label = "Right Click";
         };
         left_button: left_button {
-            gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            gpios = <&gpio0 29 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
             label = "Left Click";
         };
         forward_button: forward_button {
-            gpios = <&gpio0 28 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            gpios = <&gpio1 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
             label = "Forward Button";
+            // this button is not connected on the PCB
         };
-
         backward_button: backward_button {
-            gpios = <&gpio0 29 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            gpios = <&gpio1 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
             label = "Backward Button";
+            // this button is not connected on the PCB
         };
-
+        dpi_button: dpi_button {
+            gpios = <&gpio0 31 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            label = "DPI Button";
+        };
     };    
+
+    output {
+        compatible = "gpio-leds";
+        status = "okay";
+
+        glow_en: glow_en {
+            gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+        };
+    };
 
     id_dev_0: hid_dev_0 {
 		compatible = "zephyr,hid-device";
@@ -61,26 +76,29 @@
 &i2s0 {
     status = "okay";
     pinctrl-0 = <&i2s0_default_alt>;
-    pinctrl-names = "default";
+	pinctrl-names = "default";
     // Additional I2S configuration as needed
     led_strip: ws2812@0 {
         compatible = "worldsemi,ws2812-i2s";
         reg = <0>;
-        chain-length = <8>;         /* Set to your actual LED count */
-        color-mapping = <1 0 2>;    /* Example: GRB ordering */
-        reset-delay = <120>;        /* 120 µs reset delay */
-        out-active-low;             /* If LED requires active-low */
-        /* Optional tuning properties if needed:
-           nibble-one = <14>;
-           nibble-zero = <8>;
-           lrck-period = <10>;
-           extra-wait-time = <300>;
-        */
-        i2s-dev = <&i2s0>;               /* I2S controller reference (mandatory) */
+        chain-length = <5>;         
+        color-mapping = <1 0 2>;    
+        reset-delay = <120>;      
+        i2s-dev = <&i2s0>;     
     };
 };
 
+&gpio0 {
+    status = "okay";
+};
 
+&gpio1 {
+    status = "okay";
+};
+
+&usbd {
+    status = "okay";
+};
 
 &spi1 {
     compatible = "nordic,nrf-spim";
@@ -88,16 +106,14 @@
     pinctrl-0 = <&spi1_default>;
     pinctrl-1 = <&spi1_sleep>;
     pinctrl-names = "default", "sleep";
-    cs-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+    cs-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
     paw3395_0: paw3395@0 {
         compatible = "pixart,paw3395";
         reg = <0>;
-        irq-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+        irq-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
         spi-max-frequency = <2000000>;
     };
 };
-
-
 
 &zephyr_udc0 {
 	cdc_acm_uart0: cdc_acm_uart0 {
@@ -119,30 +135,26 @@
 };
 
 &pinctrl {
+    i2s0_default_alt: i2s0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(I2S_SDOUT, 0, 24)>; // GLOW_LV
+		};
+	};
 	spi1_default: spi1_default {
         group1 {
-            psels = <NRF_PSEL(SPIM_SCK, 0, 19)>, 
-                    <NRF_PSEL(SPIM_MOSI, 0, 20)>,
-                    <NRF_PSEL(SPIM_MISO, 0, 21)>;
+            psels = <NRF_PSEL(SPIM_SCK, 1, 9)>, 
+                    <NRF_PSEL(SPIM_MOSI, 0, 8)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 6)>;
             };
     };
     spi1_sleep: spi1_sleep {
         group1 {
-            psels = <NRF_PSEL(SPIM_SCK, 0, 19)>,
-                    <NRF_PSEL(SPIM_MOSI, 0, 20)>,
-                    <NRF_PSEL(SPIM_MISO, 0, 21)>;
+            psels = <NRF_PSEL(SPIM_SCK, 1, 9)>,
+                    <NRF_PSEL(SPIM_MOSI, 0, 8)>,
+                    <NRF_PSEL(SPIM_MISO, 0, 6)>;
             low-power-enable;
         };
     };
-	i2s0_default_alt: i2s0_default_alt {
-		group1 {
-			psels = <NRF_PSEL(I2S_SCK_M, 0, 22)>,
-				<NRF_PSEL(I2S_LRCK_M, 0, 23)>,
-				<NRF_PSEL(I2S_SDOUT, 0, 5)>,
-				<NRF_PSEL(I2S_SDIN, 0, 24)>;
-		};
-	};
-
 	i2c0_default: i2c0_default {
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 0, 26)>, <NRF_PSEL(TWIM_SCL, 0, 27)>;
@@ -155,8 +167,4 @@
 			low-power-enable;
 		};
 	};
-};
-
-&usbd {
-    status = "okay";
 };
