@@ -162,18 +162,18 @@ static void send_output_to_host(
     }
 }
 
-static void handle_encoder_button(bool encoder_button_state)
+static void handle_dpi_button(bool dpi_button_state)
 {
-    static bool prev_encoder_button_state = false;
+    static bool prev_dpi_button_state = false;
     // Detect rising edge: previously LOW, now HIGH
-    if (!prev_encoder_button_state && encoder_button_state)
+    if (!prev_dpi_button_state && dpi_button_state)
     {
         rotate_dpi();
         update_led(cpi_val);
     }
 
     // Remember last state for next call
-    prev_encoder_button_state = encoder_button_state;
+    prev_dpi_button_state = dpi_button_state;
 }
 
 static void get_cursor_position(int *x, int *y)
@@ -239,7 +239,8 @@ void polling_run(void)
     battery_get_percentage(&battery_percent);
 
     // HANDLE DPI & LED UPDATE
-    handle_encoder_button(encoder_button_state);
+    bool dpi_button_state = switch_get_state_dpi();
+    handle_dpi_button(dpi_button_state);
 
     k_usleep(UPDATE_RATE);
 }

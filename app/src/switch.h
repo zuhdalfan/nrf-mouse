@@ -11,6 +11,7 @@ extern "C"
     bool switch_get_state_right(void);
     bool switch_get_state_forward(void);
     bool switch_get_state_backward(void);
+    bool switch_get_state_dpi(void);
 
 #ifdef __cplusplus
 }
